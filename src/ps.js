@@ -79,3 +79,20 @@ module.exports.updateSchedule = async (
     throw Error("updateSchedule: " + e);
   }
 };
+
+module.exports.deleteShedule = async (psId) => {
+  try {
+    let conn = await mysql.getConnection();
+    try {
+      await conn.query(`DELETE FROM ps WHERE ps_id = ${psId}`);
+      conn.release();
+      return psId;
+    } catch (e) {
+      console.log(e);
+      throw Error(e);
+    }
+  } catch (e) {
+    console.log(e);
+    throw Error("deleteShedule: " + e);
+  }
+};

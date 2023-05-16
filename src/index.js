@@ -101,7 +101,7 @@ app.put("/ps/:ps_id", async (req, res) => {
   // "ps_startdate": string, (date)
   // "ps_enddate": string, (date)
   // "ps_memo": string,
-  let ps_id = req.params;
+  let { ps_id } = req.params;
   const json = req.body;
   let psId = await ps.updateSchedule(
     ps_id,
@@ -119,10 +119,10 @@ app.put("/ps/:ps_id", async (req, res) => {
 });
 
 //deleteSchedule
-app.delete("/ps/deleteSchedule/:ps_id", async (req, res) => {
-  let ps_id = req.params;
-
-  res.send("boolean"); //success(1) or fail(0)
+app.delete("/ps/:ps_id", async (req, res) => {
+  let { ps_id } = req.params;
+  await ps.deleteShedule(ps_id);
+  res.send(true); //success(1) or fail(0)
 });
 
 //postTeam
