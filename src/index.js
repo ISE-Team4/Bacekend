@@ -68,7 +68,7 @@ app.get("/ps/:user_id", async (req, res) => {
 });
 
 //postSchedule
-app.post("/ps/postSchedule", async (req, res) => {
+app.post("/ps", async (req, res) => {
   // request body
   // "user_id": int,
   // "ps_name": string,
@@ -76,18 +76,21 @@ app.post("/ps/postSchedule", async (req, res) => {
   // "ps_enddate": string, (date)
   // "ps_memo": string,
   // "ps_type": string
-  const json = JSON.parse(req.body);
+  let json = req.body;
+  let psId = await ps.saveSchedule(
+    json["user_id"],
+    json["ps_name"],
+    json["ps_startdate"],
+    json["ps_enddate"],
+    json["ps_memo"],
+    json["ps_type"]
+  );
 
   let ps_data = {
-    user_id: "string",
-    ps_name: "string",
-    ps_startdate: "string",
-    ps_enddate: "string",
-    ps_memo: "string",
-    ps_type: "string",
+    ps_id: psId,
   };
 
-  res.send(user_data);
+  res.send(ps_data);
 });
 
 //updateSchedule
