@@ -11,16 +11,22 @@ const server = app.listen(PORT, () =>
 );
 
 // src 폴더 모듈 임포트
-const ps = require("/src/ps.js");
-const team = require("/src/team.js");
-const user = require("/src/user.js");
+const ps = require("./ps");
+const team = require("./team");
+const user = require("./user");
+const db = require("./mysql");
+
+db.createTable();
 
 //postUser
 app.post("/user", async (req, res) => {
-  let { user_name } = req.params;
+  let { user_name } = req.body;
+
+  let userId = await user.saveUser(user_name);
+  console.log(userId);
 
   let user_data = {
-    user_id: "@@구현할부분@@",
+    user_id: userId,
   };
 
   res.send(user_data);
