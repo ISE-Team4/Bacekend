@@ -18,6 +18,9 @@ const db = require("./mysql");
 
 db.createTable();
 
+/**
+ * User API
+ */
 //postUser
 app.post("/user", async (req, res) => {
   let { user_name } = req.body;
@@ -36,32 +39,32 @@ app.post("/user", async (req, res) => {
 app.get("/user/:user_id", async (req, res) => {
   let { user_id } = req.params;
 
+  let userObj = await user.findUser(user_id);
+  // console.log(userObj);
+
   let user_data = {
-    user_name: "유저명 (string)",
-    team: "팀 존재 여부 (bool)",
+    user_name: userObj["user_name"],
+    team: userObj["team"],
   };
 
   res.send(user_data);
 });
 
+/**
+ * PS API
+ */
+
 //getScheduleList
-app.get("/ps/getScheduleList", async (req, res) => {
-  // request body
+app.get("/ps/:user_id", async (req, res) => {
+  // request
   // "user_id": int
-  // "date": string (date)
-  const json = JSON.parse(req.body);
+  // "date": string
+  let { user_id } = req.params;
+  let { date } = req.query;
 
-  let ps_data = {
-    ps_id: "number",
-    ps_name: "string",
-    ps_startdate: "string",
-    ps_enddate: "string",
-    ps_memo: "string",
-    ps_type: "string",
-    ps_alarm: "boolean",
-  };
+  let psObj = await ps.findSchedules(user_id, date);
 
-  res.send(user_data);
+  res.send(psObj);
 });
 
 //postSchedule
