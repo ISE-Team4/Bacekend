@@ -94,27 +94,28 @@ app.post("/ps", async (req, res) => {
 });
 
 //updateSchedule
-app.put("/ps/updateSchedule/:ps_id", async (req, res) => {
+app.put("/ps/:ps_id", async (req, res) => {
   // request body
-  // "user_id": int,
+  // "ps_id": int,
   // "ps_name": string,
   // "ps_startdate": string, (date)
   // "ps_enddate": string, (date)
   // "ps_memo": string,
-  // "ps_type": string
   let ps_id = req.params;
-  const json = JSON.parse(req.body);
+  const json = req.body;
+  let psId = await ps.updateSchedule(
+    ps_id,
+    json["ps_name"],
+    json["ps_startdate"],
+    json["ps_enddate"],
+    json["ps_memo"]
+  );
 
   let ps_data = {
-    ps_id: "number",
-    ps_name: "string",
-    ps_startdate: "string",
-    ps_enddate: "string",
-    ps_memo: "string",
-    ps_type: "string",
+    ps_id: psId,
   };
 
-  res.send(user_data);
+  res.send(ps_data);
 });
 
 //deleteSchedule

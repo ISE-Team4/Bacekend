@@ -63,21 +63,19 @@ module.exports.updateSchedule = async (
   try {
     let conn = await mysql.getConnection();
     try {
-      await conn.query(`UPDATE`);
-
-      let rows = await conn.query(
-        `SELECT * FROM ps where user_id = ${userId} and
-        ps_startdate > ${date} AND ps_startdate < date_add(${date}, interval 1 DAY);`
+      await conn.query(
+        `UPDATE PS 
+          SET ps_name = '${name}', ps_startdate = '${startdate}', ps_enddate = '${enddate}', ps_memo = '${memo}'
+        WHERE ps_id = ${psId}`
       );
-      let res = JSON.parse(JSON.stringify(rows))[0];
       conn.release();
-      return res;
+      return psId;
     } catch (e) {
       console.log(e);
       throw Error(e);
     }
   } catch (e) {
     console.log(e);
-    throw Error("findSchedules: " + e);
+    throw Error("updateSchedule: " + e);
   }
 };
