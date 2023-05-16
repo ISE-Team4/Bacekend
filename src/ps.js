@@ -4,9 +4,11 @@ module.exports.findSchedules = async (userId, date) => {
   try {
     let conn = await mysql.getConnection();
     try {
+      // SELECT * FROM ps where user_id = 7 and
+      //   DATE(ps_startdate) >= '2023-05-16' AND DATE(ps_enddate) <= '2023-05-17'
       let rows = await conn.query(
         `SELECT * FROM ps where user_id = ${userId} and
-        ps_startdate > ${date} AND ps_startdate < date_add(${date}, interval 1 DAY);`
+        DATE(ps_startdate) <= ${date} AND DATE(ps_enddate) >= ${date}`
       );
       let res = JSON.parse(JSON.stringify(rows))[0];
       conn.release();
@@ -48,5 +50,34 @@ module.exports.saveSchedule = async (
   } catch (e) {
     console.log(e);
     throw Error("saveSchedule: " + e);
+  }
+};
+
+module.exports.updateSchedule = async (
+  psId,
+  name,
+  startdate,
+  enddate,
+  memo
+) => {
+  try {
+    let conn = await mysql.getConnection();
+    try {
+      await conn.query(`UPDATE`);
+
+      let rows = await conn.query(
+        `SELECT * FROM ps where user_id = ${userId} and
+        ps_startdate > ${date} AND ps_startdate < date_add(${date}, interval 1 DAY);`
+      );
+      let res = JSON.parse(JSON.stringify(rows))[0];
+      conn.release();
+      return res;
+    } catch (e) {
+      console.log(e);
+      throw Error(e);
+    }
+  } catch (e) {
+    console.log(e);
+    throw Error("findSchedules: " + e);
   }
 };
