@@ -125,6 +125,9 @@ app.delete("/ps/:ps_id", async (req, res) => {
   res.send(true); //success(1) or fail(0)
 });
 
+/**
+ * Team API
+ */
 //postTeam
 app.post("/team", async (req, res) => {
   // request body
