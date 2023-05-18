@@ -15,6 +15,7 @@ const ps = require("./ps");
 const team = require("./team");
 const user = require("./user");
 const db = require("./mysql");
+const reservation = require("./reservation");
 
 db.createTable();
 
@@ -318,4 +319,28 @@ app.get("/team/time/:ts_id", async (req, res) => {
   };
 
   res.send(ts_data);
+});
+
+//getAvailableSpaces
+app.get("/reservation/space/:user_id", async (req, res) => {
+  // request body
+  // "from": string (date)
+  // "to": string (date)
+  let user_id = req.params;
+  // user_id로 skku_id, skku_pwd 찾는 query 필요
+  const json = JSON.parse(req.body);
+
+  let available_space = await find_space(skku_id, skku_pwd, json.from, json.to);
+  /*
+    {
+      "available": "boolean",
+      "space": [
+        "str",
+        "str",
+        ...
+      ]
+    }
+  */
+
+  res.send(available_space);
 });
