@@ -85,8 +85,8 @@ def open_reservation_popup(driver: webdriver.Chrome) -> webdriver.Chrome:
     btn = wait.until(EC.presence_of_element_located(
         (By.ID, 'mainframe.TopFrame.form.divFrame.form.divTop.form.divPopupMenuM532010000.form.divMain.form.divMenuM532011100.form.btnMenuM000011122:icontext')))
     btn.click()
-    btn = wait.until(EC.presence_of_element_located(
-        (By.CLASS_NAME, 'btn_WF_mainGrn')))
+    btn = wait.until(EC.element_to_be_clickable(
+        (By.CSS_SELECTOR, "[id*='form.divWork.form.btnInsert4']")))
     btn.click()
 
     return driver
@@ -210,12 +210,17 @@ def main():
     args = argparsing()
     driver = init_driver()
     
-    login_skku(driver, args.user_id, args.user_pwd)
+    login_skku(driver, args.user_id, args.user_pwd ) #"id", "pswd")
     enter_gls(driver)
     open_reservation_popup(driver)
     
     if args.find_space:    
-        space_list = available_space(driver, datetime.fromtimestamp(args.start_t/1000), datetime.fromtimestamp(args.end_t/1000))
+        space_list = available_space(driver,
+            datetime.strptime("2023-05-24 12:00", "%Y-%m-%d %H:%M"),
+            datetime.strptime("2023-05-24 13:00", "%Y-%m-%d %H:%M")
+        ) #datetime.fromtimestamp(args.start_t/1000), datetime.fromtimestamp(args.end_t/1000))
+        
+        
         driver.quit()
         print(space_list)
         return
@@ -224,7 +229,8 @@ def main():
         submit_reservation_form(driver)
         driver.quit()
         return
-
+    
+    driver.quit()
     return
 
 if __name__ == "__main__":
