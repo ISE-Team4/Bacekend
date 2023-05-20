@@ -80,7 +80,7 @@ module.exports.updateSchedule = async (
   }
 };
 
-module.exports.deleteShedule = async (psId) => {
+module.exports.deleteSchedule = async (psId) => {
   try {
     let conn = await mysql.getConnection();
     try {
