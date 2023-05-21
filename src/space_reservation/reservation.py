@@ -9,13 +9,17 @@ from typing import Tuple, Dict, List, Union
 import argparse
 import time
 from datetime import datetime
+import re
 
 # Chrome WebDriver 경로 설정 (본인의 환경에 맞게 수정)
 WEBDRIVER_PATH = './chromedriver'
 SERVICE = Service(WEBDRIVER_PATH)
-OPTIONS = webdriver.ChromeOptions()
-OPTIONS.add_argument('--start-maximized')  # 브라우저 창 최대화
-
+OPTIONS = webdriver.ChromeOptions()  # 브라우저 창 최대화
+OPTIONS.add_argument('--start-maximized')
+OPTIONS.add_argument("--window-size=1920,1080")
+OPTIONS.add_argument('--headless')
+OPTIONS.add_argument('--no-sandbox')
+OPTIONS.add_argument('--disable-dev-shm-usage')
 
 def init_driver() -> webdriver.Chrome:
     # Chrome WebDriver 인스턴스 생성
@@ -38,14 +42,16 @@ def login_skku(driver: webdriver.Chrome, user_id: str, user_pwd: str) -> webdriv
     # print(user_id, user_pwd)
     driver.get('https://eportal.skku.edu')
 
-    user_id_input = driver.find_element('id', 'userid')
-    user_pwd_input = driver.find_element('id', 'userpwd')
+    wait = WebDriverWait(driver, 10)
+    user_id_input = wait.until(EC.presence_of_element_located(
+        (By.ID, 'userid')))
+    user_pwd_input = wait.until(EC.presence_of_element_located(
+        (By.ID, 'userpwd')))
 
     user_id_input.send_keys(user_id)
     user_pwd_input.send_keys(user_pwd)
 
     user_pwd_input.send_keys(Keys.RETURN)
-    time.sleep(5)
 
     return driver
 
@@ -60,11 +66,15 @@ def enter_gls(driver: webdriver.Chrome) -> webdriver.Chrome:
         driver (webdriver.Chrome): WebDriver 인스턴스
     """
     driver.get('https://eportal.skku.edu/wps/myportal/std')
-    driver.implicitly_wait(1000)
-    element = driver.find_element(By.XPATH, '//a[@title="GLS"]')
+    wait = WebDriverWait(driver, 10)
+    
+    user_name = wait.until(EC.presence_of_element_located(
+        (By.CLASS_NAME, 'userInfo')))
+    print(user_name.get_attribute('innerText'))
+    element = wait.until(EC.presence_of_element_located(
+        (By.XPATH, '//a[@title="GLS"]')))
     element.click()
     driver.switch_to.window(driver.window_handles[-1])
-
     return driver
 
 
@@ -77,16 +87,19 @@ def open_reservation_popup(driver: webdriver.Chrome) -> webdriver.Chrome:
     Returns:
         webdriver.Chrome: _description_
     """
-    wait = WebDriverWait(driver, 100)
-    
+    wait = WebDriverWait(driver, 10)
+    user_name = wait.until(EC.presence_of_element_located(
+        (By.ID, 'mainframe.TopFrame.form.divFrame.form.divTop.form.divTop.form.staUserInfo:text')))
+    print(user_name.get_attribute('innerText'))
     btn = wait.until(EC.presence_of_element_located(
-        (By.ID, 'mainframe.TopFrame.form.divFrame.form.divTop.form.divTop.form.btnM532010000:icontext')))
+        (By.XPATH, '//*[@id="mainframe.TopFrame.form.divFrame.form.divTop.form.divTop.form.btnM532010000:icontext"]')))
     btn.click()
+    print("butn find")
     btn = wait.until(EC.presence_of_element_located(
-        (By.ID, 'mainframe.TopFrame.form.divFrame.form.divTop.form.divPopupMenuM532010000.form.divMain.form.divMenuM532011100.form.btnMenuM000011122:icontext')))
+        (By.XPATH, '//*[@id="mainframe.TopFrame.form.divFrame.form.divTop.form.divPopupMenuM532010000.form.divMain.form.divMenuM532011100.form.btnMenuM000011122:icontext"]')))
     btn.click()
-    btn = wait.until(EC.presence_of_element_located(
-        (By.CLASS_NAME, 'btn_WF_mainGrn')))
+    btn = wait.until(EC.element_to_be_clickable(
+        (By.CSS_SELECTOR, "[id*='form.divWork.form.btnInsert4']")))
     btn.click()
 
     return driver
@@ -94,10 +107,16 @@ def open_reservation_popup(driver: webdriver.Chrome) -> webdriver.Chrome:
 
 def available_space(driver: webdriver.Chrome, t_from: datetime, t_to: datetime) -> Dict[str, List[str]]:
     space_list = []
-    wait = WebDriverWait(driver, 100)  
+    space_num_list = []
+    building_num = 7
     
-    month = driver.find_element(By.CSS_SELECTOR, "[id*='grdCal.head.gridrow_-1.cell_-1_2:text']")
-    month = int(month.text[month.text.find('년')+1:month.text.find('월')])
+    wait = WebDriverWait(driver, 10)  
+    
+    month = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "[id*='grdCal.head.gridrow_-1.cell_-1_2:text']")))
+    pattern = r"\d+"
+    matches = re.findall(pattern, month.text)
+    month = int(matches[1])
+    print(month)
     
     # 해당 월로 캘린더 이동
     if month < t_from.month:
@@ -113,7 +132,7 @@ def available_space(driver: webdriver.Chrome, t_from: datetime, t_to: datetime) 
             
     # 1일 cell 찾기
     for i in range(7):
-        day_cell = driver.find_element(By.CSS_SELECTOR, f"[id*='grdCal.body.gridrow_0.cell_0_{i}.subcell_0_{i}_0']")
+        day_cell = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, f"[id*='grdCal.body.gridrow_0.cell_0_{i}.subcell_0_{i}_0']")))
         if day_cell.text == '1':
             first_day_cell = i
             break
@@ -125,7 +144,7 @@ def available_space(driver: webdriver.Chrome, t_from: datetime, t_to: datetime) 
     btn = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "[id*='cboBuildCd.dropbutton']")))
     btn.click()
     
-    btn = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "[id*='.cboBuildCd.combolist.item_7']")))
+    btn = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, f"[id*='.cboBuildCd.combolist.item_{building_num}']")))
     btn.click()
     
     # 시간 cell 범위
@@ -136,10 +155,13 @@ def available_space(driver: webdriver.Chrome, t_from: datetime, t_to: datetime) 
         available = is_available(driver, i, day_row, day_column, start_cell, end_cell)
         if available:
             space_list.append(available)
+            space_num_list.append(i)
         
     return {
         "available": len(space_list) > 0,
-        "space": space_list
+        "space": space_list,
+        "space_num": space_num_list,
+        "building_num": building_num
     }
 
 def is_available(driver: webdriver.Chrome, space_num:int, day_row:int, day_column:int, start_cell: int, end_cell: int) -> Union[bool, str]:
@@ -166,7 +188,7 @@ def is_available(driver: webdriver.Chrome, space_num:int, day_row:int, day_colum
     
     # 해당 시간 이용가능 여부 판단
     for i in range(start_cell, end_cell, 2):
-        element = driver.find_element(By.CSS_SELECTOR, f"[id*='form.grdMain.body.gridrow_0.cell_0_{i}']")
+        element = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, f"[id*='form.grdMain.body.gridrow_0.cell_0_{i}']")))
         if element.get_attribute('innerHTML') != '':
             return False
         
@@ -175,9 +197,120 @@ def is_available(driver: webdriver.Chrome, space_num:int, day_row:int, day_colum
 
 
 
-def submit_reservation_form(driver: webdriver.Chrome) -> None:
-    # 여기서부터 추가
-    pass
+def submit_reservation_form(driver: webdriver.Chrome, Event_num:int, Team_name:str, Event_name: str, Member_num: int, Building_num: int, space_num:int, t_from: datetime, t_to: datetime) -> None:
+    """_summary_
+    공간대여신청 (예약신청) 팝업창 열기
+    Args:
+        driver (webdriver.Chrome): _description_
+        Event_num: 행사구분 번호, {1: 보충수업특강시험, 2:학생회동아리, 3:세미나스터디, 4:본부부서 주관행사
+        5: 단과대학 주관행사, 6:학과 주관행사, 7:교외 단체행사, 8:기타}
+        Team_name: 주관단체
+        Event_name: 행사명
+        Member_num: 행사인원 (space의 최대 수용 가능 인원 내의 범위)
+        Building_num: 건물번호 (space정보에서 추출)
+        space_num: 공간 번호
+        예약기간, 예약시간
+        
+        
+    Returns:
+        webdriver.Chrome: _description_
+    """
+    
+    #필요 정보: 행사구분 번호(int), 주관단체(str), 행사명(str), 행사인원(str), 건물번호(int)
+    #예약기간, 예약 시간
+    wait = WebDriverWait(driver, 10)
+    
+    #행사구분 선택
+    btn = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "[id*='cboHangsaGb.dropbutton']")))
+    btn.click()
+    btn = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, f"[id*='.cboHangsaGb.combolist.item_{Event_num}:text']")))
+    btn.click()
+    
+    #주관단체 입력
+    input = wait.until(EC.presence_of_element_located(
+        (By.CSS_SELECTOR, "[id*='edtSinchungGroup:input']")))
+    input.click()
+    input.send_keys(Team_name)
+    
+    #행사명 입력
+    input = wait.until(EC.presence_of_element_located(
+        (By.CSS_SELECTOR, "[id*='edtSinchungEvent:input']")))
+    input.click()
+    input.send_keys(Event_name)
+    
+    #인원 수 입력
+    input = wait.until(EC.presence_of_element_located(
+        (By.CSS_SELECTOR, "[id*='edtUseNum:input']")))
+    input.click()
+    input.send_keys(Member_num)
+    
+    
+    #건물 선택
+    btn = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "[id*='cboBuildCd.dropbutton']")))
+    btn.click()
+    btn = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, f"[id*='.cboBuildCd.combolist.item_{Building_num}']")))
+    btn.click()
+    
+    #공간 선택
+    btn = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "[id*='cboSpaceCd.dropbutton']")))
+    btn.click()
+    btn = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, f"[id*='.cboSpaceCd.combolist.item_{space_num}:text']")))
+    btn.click()
+    
+    #날짜 선택
+    btn = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "[id*='calUseDt.dropbutton']")))
+    btn.click()
+    
+    month = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "[id*='calUseDt.datepicker.head.monthstatic:text']")))
+    month = int(month.text)
+    print(month)
+    
+    # 해당 월로 캘린더 이동
+    if month < t_from.month:
+        for _ in range(t_from.month - month):
+            btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "[id*='form.calUseDt.datepicker.head.nextbutton']")))
+            btn.click()
+            # time.sleep(1.5)
+    elif month > t_from.month:
+        for _ in range(month - t_from.month):
+            btn = wait.until(EC.element_to_be_clickable((By.CSS_SELECTOR, "[id*='form.calUseDt.datepicker.head.prevbutton']")))
+            btn.click()
+            # time.sleep(1.5)
+            
+    # 1일 cell 찾기
+    for i in range(7):
+        day_cell = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, f"[id*='form.calUseDt.datepicker.body.dayitem{i}']")))
+        if day_cell.text == '1':
+            first_day_cell = i
+            break
+        
+    # 해당 날짜 cell 찾기
+    btn = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, f"[id*='form.calUseDt.datepicker.body.dayitem{t_from.day + first_day_cell - 1}']")))
+    btn.click()
+    
+    #시간 선택
+    start_cell = 2*(t_from.hour - 9)
+    if t_from.minute > 0:
+        start_cell = start_cell + 1
+    
+    end_cell = 2*(t_to.hour - 9)
+    if t_to.minute > 0:
+        end_cell = end_cell + 1
+    btn = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "[id*='cboResStTime.dropbutton']")))
+    btn.click()
+    btn = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, f"[id*='.cboResStTime.combolist.item_{start_cell}']")))
+    btn.click()
+    
+    btn = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "[id*='cboResEdTime.dropbutton']")))
+    btn.click()
+    btn = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, f"[id*='.cboResEdTime.combolist.item_{end_cell}']")))
+    btn.click()
+    
+    #제출
+    btn = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, "[id*='form.btnSave']")))
+    btn.click()
+    
+    return driver
 
 
 def argparsing() -> argparse.Namespace:
@@ -194,10 +327,11 @@ def argparsing() -> argparse.Namespace:
         }
     """
     parser = argparse.ArgumentParser()
+    #항상 필요
     parser.add_argument('--user_id', '-i', type=str, required=False, help='사용자 ID')
     parser.add_argument('--user_pwd', '-p', type=str, required=False, help='사용자 비밀번호')
-    parser.add_argument('--start_t', '-s', type=int, required=False, help='예약 시작 시간')
-    parser.add_argument('--end_t', '-e', type=int, required=False, help='예약 종료 시간')
+    parser.add_argument('--start_t', '-s', type=str, required=False, help='예약 시작 시간')
+    parser.add_argument('--end_t', '-e', type=str, required=False, help='예약 종료 시간')
     parser.add_argument('--find_space', '-F', action='store_true', help='예약가능 공간 출력')
     parser.add_argument('--submit', '-S', action='store_true', help='공간예약형식 제출')
     
@@ -211,17 +345,34 @@ def main():
     driver = init_driver()
     
     login_skku(driver, args.user_id, args.user_pwd)
+    print("로그인 성공")
     enter_gls(driver)
+    print("gls 진입 성공")
     open_reservation_popup(driver)
+    print("공간예약 팝업 진입 성공")
     
     if args.find_space:    
-        space_list = available_space(driver, datetime.fromtimestamp(args.start_t/1000), datetime.fromtimestamp(args.end_t/1000))
+        space_list = available_space(driver,
+            datetime.strptime("2023-05-24 12:00", "%Y-%m-%d %H:%M"),
+            datetime.strptime("2023-05-24 13:00", "%Y-%m-%d %H:%M")
+        )
         driver.quit()
         print(space_list)
         return
     
+    
+    dummy_space_list = {'available': True, 
+                        'space': ['[26119B] Graduate Student Seminar Room 2 / 5 people ~ 16 people', '[26314B] Seminar Room for School of Information and Communi / 8 people ~ 27 people', '[26502] Lecture Room / 20 people ~ 65 people'], 
+                        'space_num': [4, 12, 13], 
+                        'building_num': 7}
     if args.submit:
-        submit_reservation_form(driver)
+        submit_reservation_form(driver,
+            2,"소공개4팀","프로젝트 정기회의","6",
+            dummy_space_list['building_num'],
+            dummy_space_list['space_num'][0]
+            ,datetime.strptime("2023-05-24 12:00", "%Y-%m-%d %H:%M"),
+            datetime.strptime("2023-05-24 13:00", "%Y-%m-%d %H:%M")
+        )
         driver.quit()
         return
 
