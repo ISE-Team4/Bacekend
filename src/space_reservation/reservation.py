@@ -344,8 +344,8 @@ def main():
     args = argparsing()
     driver = init_driver()
     
-    login_skku(driver, args.user_id, args.user_pwd)
-    print("로그인 성공")
+    login_skku(driver, args.user_id, args.user_pwd ) #"id", "pswd")
+
     enter_gls(driver)
     print("gls 진입 성공")
     open_reservation_popup(driver)
@@ -355,7 +355,8 @@ def main():
         space_list = available_space(driver,
             datetime.strptime("2023-05-24 12:00", "%Y-%m-%d %H:%M"),
             datetime.strptime("2023-05-24 13:00", "%Y-%m-%d %H:%M")
-        )
+        ) #datetime.fromtimestamp(args.start_t/1000), datetime.fromtimestamp(args.end_t/1000))
+        
         driver.quit()
         print(space_list)
         return
@@ -375,7 +376,8 @@ def main():
         )
         driver.quit()
         return
-
+    
+    driver.quit()
     return
 
 if __name__ == "__main__":

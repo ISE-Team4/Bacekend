@@ -122,7 +122,7 @@ app.put("/ps/:ps_id", async (req, res) => {
 //deleteSchedule
 app.delete("/ps/:ps_id", async (req, res) => {
   let { ps_id } = req.params;
-  await ps.deleteShedule(ps_id);
+  await ps.deleteSchedule(ps_id);
   res.send(true); //success(1) or fail(0)
 });
 
@@ -136,10 +136,15 @@ app.post("/team", async (req, res) => {
   // "team_name": string
   const json = JSON.parse(req.body);
 
+  let team_info = await team.saveTeam(
+    json["user_id"],
+    json["team_name"]
+  );
+
   let team_data = {
-    team_id: "number",
-    team_name: "string",
-    team_alarm: "boolean",
+    team_id: team_info["teamId"],
+    team_name: json["team_name"],
+    team_alarm: "True"
   };
 
   res.send(team_data);
@@ -152,7 +157,12 @@ app.post("/team/addTeamMember", async (req, res) => {
   // "user_id": string
   const json = JSON.parse(req.body);
 
-  res.send("boolean"); //success(1) or fail(0)
+  let success = await team.addTeamMember(
+    json["team_id"],
+    json["user_id"]
+  );
+
+  res.send(success); //success(1) or error logged in team.js
 });
 
 //deleteTeamMember
@@ -162,76 +172,51 @@ app.delete("/team/deleteTeamMember", async (req, res) => {
   // "user_id": string
   const json = JSON.parse(req.body);
 
-  res.send("boolean"); //success(1) or fail(0)
+  let success = await team.deleteTeamMember(
+    json["team_id"],
+    json["user_id"]
+  );
+
+  res.send(success); //success(1) or fail(0)
 });
 
 //getTeamList
 app.get("/team/getTeamList/:user_id", async (req, res) => {
   let user_id = req.params;
 
-  let team_data = {
-    team_id: "number",
-    team_name: "string",
+  let team_info = await team.findTeam(user_id);
 
-    /*
-        team_members: [
-            user_id: "number",
-            user_name: "string"
-        ],
-        */ // 리스트
-
-    team_alarm: "boolean", // 팀 알림 on/off
-
-    /*
-        team_schedule: [ // 마감일 기준 가까운 팀 일정 최대 2개
-            ts_name: "string",
-            ts_enddate: "string"
-        ],
-        */ // 리스트
-    team_link: "string",
-  };
-
-  res.send(tezm_data);
+  res.send(team_info);
 });
 
-// //Team Alarm 끄기지만 개인 알람에 해당하는데, Team 말고 user?
-// //updateTeamAlarm
-// app.put('/team/updateTeamAlarm', async (req, res) => {
-//     // request body
-//     // "team_id": number,
-// 	// "user_id": number,
-//     let ps_id = req.params
-//     const json = JSON.parse(req.body);
+//updateTeamAlarm
+app.put('/team/updateTeamAlarm', async (req, res) => {
+  // request body
+  // "team_id": number,
+ 	// "user_id": number,
+  const json = JSON.parse(req.body);
+  
+  let alarm = await team.updateTeamAlarm(
+    json["team_id"],
+    json["user_id"]
+  );
 
-//     let ps_data = {
-//         team_alarm: "boolean"
-//     }
-
-//     res.send(ts_data);
-// });
+  res.send(alarm); // 1 if on, 0 if off
+});
 
 //getTeamSeheduleList
 app.get("/team/ts/getTeamScheduleList", async (req, res) => {
   // request body
-  // "user_id": int
+  // "team_id": int
   // "date": string (date)
   const json = JSON.parse(req.body);
 
-  let ts_data = {
-    ts_id: "number",
-    ts_name: "string",
-    ts_startdate: "string",
-    ts_enddate: "string",
-    ts_memo: "string",
-    /*
-        ts_members: [
-            user_id: "number",
-            user_name: "string"
-        ]
-        */ // 리스트
-  };
+  let schedule = await team.getTeamSchedule(
+    json["team_id"],
+    json["date"]
+  );
 
-  res.send(ts_data);
+  res.send(schedule);
 });
 
 //postTeamSeheduleList
@@ -247,14 +232,18 @@ app.post("/team/ts", async (req, res) => {
             user_id: "number",
         ]
     */ // 리스트
-  let ts_id = req.params;
   const json = JSON.parse(req.body);
 
-  let ts_data = {
-    ts_id: "number",
-  };
+  let schedule = await team.saveTeamSchedule(
+    json["team_id"],
+    json["ts_name"],
+    json["ts_startdate"],
+    json["ts_enddate"],
+    json["ts_memo"],
+    json["ts_members"]
+  );
 
-  res.send(ts_data);
+  res.send(schedule);
 });
 
 //updateTeamSchedule
@@ -269,27 +258,27 @@ app.put("/team/ts/:ts_id", async (req, res) => {
             user_id: "number",
         ]
     */ // 리스트
-  let ts_id = req.params;
-  const json = JSON.parse(req.body);
-
-  let ts_data = {
-    ts_name: "string",
-    ts_startdate: "string",
-    ts_enddate: "string",
-    ts_memo: "string",
-    /*
-        ts_members: [
-            user_id: "number",
-        ]
-        */ // 리스트
-  };
-
-  res.send(ts_data);
+    let ts_id = req.params;
+    const json = JSON.parse(req.body);
+  
+    let schedule = await team.saveTeamSchedule(
+      ts_id,
+      json["team_id"],
+      json["ts_name"],
+      json["ts_startdate"],
+      json["ts_enddate"],
+      json["ts_memo"],
+      json["ts_members"]
+    );
+  
+    res.send(schedule);
 });
 
 //deleteTeamSchedule
 app.delete("/team/ts/:ts_id", async (req, res) => {
   let ts_id = req.params;
+
+  let schedule = await team.saveTeamSchedule(ts_id);
 
   res.send("boolean"); //success(1) or fail(0)
 });

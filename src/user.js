@@ -43,6 +43,6 @@ module.exports.findUser = async (userId) => {
     }
   } catch (e) {
     console.log(e);
-    throw Error("saveUser: " + e);
+    throw Error("findUser: " + e);
   }
 };
